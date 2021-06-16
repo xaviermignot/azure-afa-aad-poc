@@ -9,19 +9,29 @@ using AzureFunctionsWithAad.Extensions;
 
 namespace AzureFunctionsWithAad.AzureFunctions
 {
-    public static class GenerateGuidFunction
+    public class GenerateGuidFunction
     {
-        [FunctionName("GenerateGuidFunction")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "identifiers")] HttpRequest req,
-            ILogger log)
+        private readonly ILogger _logger;
+
+        public GenerateGuidFunction(ILogger<GenerateGuidFunction> logger)
         {
+            _logger = logger;
+        }
+
+        [FunctionName(nameof(GenerateGuidFunction))]
+        public async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "identifiers")] 
+            HttpRequest req)
+        {
+            _logger.LogInformation("Executing {functionName}, trying to authenticate the request...", nameof(GenerateGuidFunction));
             var (authenticationStatus, authenticationResponse) = await req.HttpContext.AuthenticateFunctionAsync("Bearer");
             if (!authenticationStatus)
             {
+                _logger.LogInformation("Authentication failed with response {authenticationResponse}", authenticationResponse);
                 return authenticationResponse;
             }
 
+            _logger.LogInformation("Authentication Ok, generating a new guid...");
             return new OkObjectResult(Guid.NewGuid());
         }
     }
